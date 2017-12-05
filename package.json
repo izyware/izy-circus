@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/izyware/circus.git"
+    "url": "git+https://github.com/izyware/izy-circus.git"
   },
   "keywords": [
     "izyware",
