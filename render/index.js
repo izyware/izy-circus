@@ -411,10 +411,10 @@ modtask.runExternalProcess = function(params, cb) {
     circusModule: `${__dirname}/..`
   };
 
-  var p, token = 'izy-circus/node_modules';
+  var p, token = '/node_modules/izy-circus';
   for(p in require.cache) {
     if (p.indexOf(token) >= 0) {
-      paths.circusModule = p.split(token)[0] + 'izy-circus';
+      paths.circusModule = p.split(token)[0] + token;
       break;
     }
   }
