@@ -90,7 +90,7 @@ modtask.writeOutcome = function(outcome, res) {
     info.status = 500;
     info.msg = outcome.reason;
   }
-  res.writeHead(info.status, , { 'Content-Type': 'text/html' });
+  res.writeHead(info.status, { 'Content-Type': 'text/html' });
   res.write(info.msg);
   res.end();
 }
