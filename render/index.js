@@ -3,6 +3,10 @@ var modtask = function(params, cb) {
   var params = Object.assign({}, params);
   params.pkgName = params.entrypoint.split(':')[0];
 
+  if (params.renderingVersion == 2) {
+    return modtask.ldmod('rel:v2').render(modtask, params, cb);
+  }
+
   if (params.logtoconsole) {
     process.on('beforeExit', function () {
       if (beforeExitCalled) {
@@ -94,39 +98,6 @@ modtask.serializedRenderedPage = function(params) {
     title: params.pkgName + ' | ' + params.uri,
     url: 'https://' + params.domain + params.uri
   }
-
-  var content = ` 
-    <!DOCTYPE html>
-    <html><head> 
-    
-    <title>${data.title}</title>
-    
-    <meta name='viewport' content='width=device-width'>
-    <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-    <meta name='generator' content='izy-circus' />    
-    <meta name='description' content='${data.description}'/>
-    
-    <link rel='canonical' href='${data.url}' />
-    <link rel='shortlink' href='${data.url}' />
-        
-    <link rel='shortcut icon' href='/favicon.ico' type='ico' />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-
-    <meta property="og:title" content="${data.title}" />
-    <meta property="og:type" content="product" />
-    <meta property="og:url" content="${data.url}"/>
-    <meta property="og:image" content="/favicon.ico" />
-    <meta property="og:site_name" content="${params.pkgName}" />
-    <meta property="og:description" content="${data.description}" />
-    
-    <meta name="twitter:card" content="summary"/>
-    <meta name="twitter:site" content="${params.pkgName}"/>
-    <meta name="twitter:domain" content="${params.pkgName}"/>
-    <meta name="twitter:creator" content="${params.pkgName}"/>
-   
-    <style type="text/css">body { margin: 0; padding: 0; } </style>
-    </head>
-  `;
 
   var content = ` 
     <!DOCTYPE html>

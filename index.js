@@ -7,15 +7,31 @@ module.exports = {
     var outcome = render.applyConfig(config);
     if (!outcome.success) return outcome;
 
+    var name = 'circus';
+    if (!config.testUrl) config.testUrl = '/izycircustest';
     var circus = outcome;
     return {
+      name,
       success: true,
       render,
       canHandle: function(req) {
-        return req.url.indexOf('/favicon.ico');
-      },
-      handle: function (req, res, proxy) {
+        if (!config.acceptedPaths) config.acceptedPaths = [];
 
+        if (req.url == config.testUrl) return true;
+        var i;
+        for(i=0; i < config.acceptedPaths.length; ++i) {
+          var path = config.acceptedPaths[i];
+          if (path == '/') {
+            if (req.url == '/') {
+              return true;
+            }
+          } else if (req.url.toLowerCase().indexOf(path) == 0) {
+            return true;
+          }
+        }
+        return false;
+      },
+      handle: function (req, res, serverObjs) {
         var parsed = modtask.parseClientRequest(req, config);
         var outcome;
         outcome = modtask.determineContext(parsed);
@@ -38,11 +54,16 @@ module.exports = {
           return ;
         }
 
+        var renderingVersion = (parsed.path.indexOf(config.acceptedPaths[0]) == 0 || parsed.path == config.testUrl) ? 2 : 1;
         render({
+          testMode: parsed.path == config.testUrl,
+          serverObjs,
+          renderingVersion,
           entrypoint: `${appname}:viewer/top`,
           uri: parsed.path,
           domain: parsed.domain
         }, (outcome) => {
+          if (renderingVersion == 2) return;
           modtask.writeOutcome(outcome, res);
         });
       }
