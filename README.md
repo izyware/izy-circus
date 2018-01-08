@@ -33,5 +33,13 @@ Or you can use it inside your node app (i.e. izy-proxy uses circus to render ser
 
 ```
 
+### izy-proxy dev environment
+
+you can simply configure the package to auto reload and do
+
+```
+cp -r * ../izy-proxy/node_modules/izy-circus
+```
+
 ## NOTE
 for more details, visit https://izyware.com

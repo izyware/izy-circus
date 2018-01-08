@@ -14,25 +14,28 @@ module.exports = {
       name,
       success: true,
       render,
-      canHandle: function(req) {
+      canHandle: function(req, sessionObjs) {
         if (!config.acceptedPaths) config.acceptedPaths = [];
 
-        if (req.url == config.testUrl) return true;
+        sessionObjs = sessionObjs || {};
+        sessionObjs.parsed = modtask.parseClientRequest(req, config);
+
+        if (sessionObjs.parsed.path == config.testUrl) return true;
         var i;
         for(i=0; i < config.acceptedPaths.length; ++i) {
           var path = config.acceptedPaths[i];
           if (path == '/') {
-            if (req.url == '/') {
+            if (sessionObjs.parsed.path == '/') {
               return true;
             }
-          } else if (req.url.toLowerCase().indexOf(path) == 0) {
+          } else if (sessionObjs.parsed.path.toLowerCase().indexOf(path) == 0) {
             return true;
           }
         }
         return false;
       },
-      handle: function (req, res, serverObjs) {
-        var parsed = modtask.parseClientRequest(req, config);
+      handle: function (req, res, serverObjs, sessionObjs) {
+        var parsed = sessionObjs.parsed;
         var outcome;
         outcome = modtask.determineContext(parsed);
         if (!outcome.success) return modtask.writeOutcome(outcome, res);
