@@ -39,7 +39,13 @@ modtask.render = function(cacheManager, params, cb) {
       outcome.status = outcome.success? 200: 500;
     }
     var pageHtml = cacheManager.serializedRenderedPage(params);
-    serverObjs.res.writeHead(outcome.status, { 'Content-Type': 'text/html' });
+    var defaultHttpHeaders = { 'Content-Type': 'text/html' };
+    outcome.httpHeaders = outcome.httpHeaders || {};
+    var p;
+    for(p in outcome.httpHeaders) {
+      defaultHttpHeaders[p] = outcome.httpHeaders[p];
+    }
+    serverObjs.res.writeHead(outcome.status, defaultHttpHeaders);
     serverObjs.res.write(pageHtml);
     serverObjs.res.end();
   }
