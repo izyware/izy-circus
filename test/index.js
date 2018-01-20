@@ -1,7 +1,8 @@
 
 var modtask = function(config) {
 	var outcome = {};
-	outcome = modtask.testCaching();
+
+	outcome = modtask.testDiskCaching();
 	if (!outcome.success) return modtask.showFailMsg(outcome);
 
 	outcome = modtask.testIzyProxyPlugin();
@@ -80,7 +81,7 @@ modtask.testClientInfoParser = function() {
 
 }
 
-modtask.testCaching = function() {
+modtask.testDiskCaching = function() {
 	modtask.Log('Test Caching');
 	var mod = modtask.ldmod('rel:../render/index');
 	mod.cfg = {

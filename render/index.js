@@ -224,31 +224,25 @@ modtask.finalize = function(params) {
   }
 }
 
+
 modtask.getBS = function(cb) {
-
   var bootstrap = '';
-  var useLocalBootstrap = false;
-
-  // todo: implement caching for improved performance. See https://izyware/#/help/deployment for information
-  // on how to properly implement a caching layer for the bootstraper and package manager
+  var useLocalBootstrap = true;
   var bsfile = '__izyware_bootstrap.js';
 
-  modtask.Log('Load bootstrap ... caching = ' + useLocalBootstrap);
-
-  if (useLocalBootstrap) {
-    const fs = require('fs');
-    var bootstrap = fs.readFileSync(bsfile);
+  if (useLocalBootstrap && modtask.bsCache) {
+    modtask.Log('Loading bootstrap from cache');
+    var bootstrap = modtask.bsCache;
     bootstrap = bootstrap.toString();
     cb({success : true, data : bootstrap });
   } else {
+    modtask.Log('Loading bootstrap from ' + modtask.cfg.bootstrapUrl);
     var request = require('request');
-    modtask.Log('getting: ' + modtask.cfg.bootstrapUrl);
     request(modtask.cfg.bootstrapUrl, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var bootstrap = body;
         if (useLocalBootstrap) {
-          const fs = require('fs');
-          fs.writeFileSync(bsfile, bootstrap);
+          modtask.bsCache = bootstrap;
         }
         cb({success: true, data: bootstrap });
       } else {
