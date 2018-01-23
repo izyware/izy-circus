@@ -58,7 +58,7 @@ modtask.render = function(renderUtils, params, cb) {
     verbose: true, // lots of verbose info for cache access, etc.
 
     // These two get consumed by both the IL and BS layers
-    cachingDisabled: false,
+    cachingDisabled: !!params.config.cachingDisabled,
     releaseDisabled: false,
 
     // Use this if you need to:

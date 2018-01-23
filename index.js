@@ -59,6 +59,7 @@ module.exports = {
 
         var renderingVersion = 2; // (parsed.path.indexOf(config.acceptedPaths[0]) == 0 || parsed.path == config.testUrl) ? 2 : 1;
         render({
+          config: config,
           testMode: parsed.path == config.testUrl,
           serverObjs,
           renderingVersion,
