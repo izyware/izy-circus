@@ -1,10 +1,26 @@
 
 var modtask = function(params, cb) {
   var params = Object.assign({}, params);
+  if (params.testMode) {
+    serverObjs.sendStatus({
+      status: 200,
+      plugin: 'circus'
+    }, 'OK');
+    if (cb) {
+      cb({ success: true });
+    }
+    return ;
+  }
+
   params.pkgName = params.entrypoint.split(':')[0];
+  if (!params.renderingVersion) {
+    params.renderingVersion = 2;
+  }
 
   if (params.renderingVersion == 2) {
     return modtask.ldmod('rel:v2').render(modtask, params, cb);
+  } else if (params.renderingVersion == 3) {
+    return modtask.ldmod('rel:v3').render(modtask, params, cb);
   }
 
   if (params.logtoconsole) {

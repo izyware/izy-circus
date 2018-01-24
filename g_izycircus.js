@@ -34,6 +34,9 @@ function showError(outcome) {
 
 modtask.simulateServerEnvironment = function(config) {
   config.serverObjs = {};
+  config.serverObjs.sendStatus = function(p1, p2) {
+    console.log('---- Server sendStatus ----', p1, p2);
+  }
   config.serverObjs.res = {};
   config.serverObjs.res.writeHead = function(status, headers) {
     console.log('---- Server Response Headers ----')
@@ -58,6 +61,7 @@ modtask.cmdlineverbs.method = function() {
       modtask.ldmod('rel:' + method + '/index')(config);
       break;
     case 'render':
+      config.config = config;
       var mod = modtask.ldmod('rel:' + method + '/index');
       var outcome = mod.applyConfig(config);
       if (!outcome.success) return showError(outcome);
