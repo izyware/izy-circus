@@ -1,5 +1,6 @@
 
 var modtask = function() {}
+modtask.verbose = false;
 
 // Returns in miliseconds
 modtask.getNow = function() {
@@ -9,6 +10,8 @@ modtask.getNow = function() {
 
 
 modtask.render = function(renderUtils, params, cb) {
+  // Shared per session
+  modtask.rootmod = require('izymodtask').getRootModule();
 
   var uri = params.uri;
   /*
@@ -104,7 +107,7 @@ modtask.currentViewModuleParams = {};
 modtask.seqs = {};
 modtask.seqs.processNextViewModule = function(push) {
   var modname = modtask.currentViewModule;
-  console.log('processNextViewModule', modname);
+  if (modtask.verbose) modtask.Log('processNextViewModule ' + modname);
   var viewModule = {
     mod: null,
     // collection of pulse queries
@@ -217,7 +220,7 @@ modtask.doTransition = function (transition, callback) {
     case 'import_module':
       var pathName = transition.udt[1];
       try {
-        ldPath(pathName, function (outcome) {
+        modtask.ldPath(pathName, function (outcome) {
           if (!outcome.success) return modtask.handleTransitionFailure('Cannot import_module ' + pathName + ': ' + outcome.reason);
           return resolveTransition(pathName, outcome.data);
         });
@@ -229,91 +232,95 @@ modtask.doTransition = function (transition, callback) {
   return false;
 }
 
-function ldPath(path, cb) {
-  var parsed = parseInvokeString(path);
-  return ldParsedPath(parsed, cb);
-}
 
-function ldParsedPath(parsed, cb) {
-  loadPackageIfNotPresent({
-    pkg: parsed.pkg,
-    mod: parsed.mod
-  }, function (outcome) {
-    if (!outcome.success) return cb(outcome);
-    var reason = 'Unknown';
-    try {
-      return cb({ success: true, data: outcome.rootmod.ldmod(parsed.mod) });
-    } catch (e) {
-      reason = e.message;
-    }
-    return cb( { reason });
-  });
-}
+modtask.ldPath = function(path, cb) {
+  return ldPath(path, cb);
 
-function loadPackageIfNotPresent(query, cb) {
-  // For security reasons we virtualize each requests's load into its own root context
-  // However, the file system caching (if present) will still allow sharing of context
-  var rootmod = require('izymodtask').getRootModule();
-  var outcome = { success:true, reason: [],  rootmod };
-
-  var pkg = query.pkg;
-  var mod = query.mod;
-
-  var details = {};
-  rootmod.ldmod('kernel\\selectors').objectExist(mod, details, false);
-  // If you want to see the search paths, etc. try
-  // console.log(details);
-  if (details.found) {
-    return cb(outcome);
+  function ldPath(path, cb) {
+    var parsed = parseInvokeString(path);
+    return ldParsedPath(parsed, cb);
   }
 
-  if (pkg === '') return cb(outcome);
-  var pkgloader = rootmod.ldmod('pkgloader');
-  var modtask = rootmod;
-
-  pkgloader.getCloudMod(pkg).incrementalLoadPkg(
-    // One of these per package :)
-    function(pkgName, pkg, pkgString) {
+  function ldParsedPath(parsed, cb) {
+    loadPackageIfNotPresent({
+      pkg: parsed.pkg,
+      mod: parsed.mod
+    }, function (outcome) {
+      if (!outcome.success) return cb(outcome);
+      var reason = 'Unknown';
       try {
-        modtask.commit = "true";
-        modtask.verbose = false;
-        modtask.ldmod('kernel/extstores/import').sp('verbose', modtask.verbose).install(
-          pkg,
-          modtask.ldmod('kernel/extstores/inline/import'),
-          function (ops) {
-            if (modtask.verbose) {
-              console.log(ops.length + " modules installed for = " + pkgName);
-            }
-          },
-          function (outcome) {
-            outcome.reason.push(outcome.reason);
-            outcome.success = false;
-          }
-        );
-      } catch(e) {
-        return cb({ reason: e.message });
+        return cb({success: true, data: outcome.rootmod.ldmod(parsed.mod)});
+      } catch (e) {
+        reason = e.message;
       }
-    }, function() {
-      cb(outcome);
-    },
-    cb
-  );
-}
-
-function parseInvokeString(path) {
-  var pkg = '';
-  if (path.indexOf(':') >= 0) {
-    pkg = path.split(':');
-  };
-  var mod, params = '';
-  if (pkg.length) {
-    mod = pkg[0] + '/' + pkg[1];
-    pkg = pkg[0];
-    params = path.substr(mod.length+1);
-  } else {
-    pkg = '';
-    mod = path;
-    params = '';
+      return cb({reason});
+    });
   }
-  return { path, pkg, mod, params };
+
+  function loadPackageIfNotPresent(query, cb) {
+    // Unlike the api-gateway, we will *share* the context across the session using the common rootmod
+    var rootmod = modtask.rootmod;
+    var outcome = {success: true, reason: [], rootmod};
+
+    var pkg = query.pkg;
+    var mod = query.mod;
+
+    var details = {};
+    rootmod.ldmod('kernel\\selectors').objectExist(mod, details, false);
+    // If you want to see the search paths, etc. try
+    // console.log(details);
+    if (details.found) {
+      return cb(outcome);
+    }
+
+    if (pkg === '') return cb(outcome);
+    var pkgloader = rootmod.ldmod('pkgloader');
+
+    pkgloader.getCloudMod(pkg).incrementalLoadPkg(
+      // One of these per package :)
+      function (pkgName, pkg, pkgString) {
+        try {
+          rootmod.commit = "true";
+          rootmod.verbose = false;
+          rootmod.ldmod('kernel/extstores/import').sp('verbose', rootmod.verbose).install(
+            pkg,
+            rootmod.ldmod('kernel/extstores/inline/import'),
+            function (ops) {
+              if (rootmod.verbose) {
+                console.log(ops.length + " modules installed for = " + pkgName);
+              }
+            },
+            function (outcome) {
+              outcome.reason.push(outcome.reason);
+              outcome.success = false;
+            }
+          );
+        } catch (e) {
+          return cb({reason: e.message});
+        }
+      }, function () {
+        cb(outcome);
+      },
+      cb
+    );
+  }
+
+  function parseInvokeString(path) {
+    var pkg = '';
+    if (path.indexOf(':') >= 0) {
+      pkg = path.split(':');
+    }
+    ;
+    var mod, params = '';
+    if (pkg.length) {
+      mod = pkg[0] + '/' + pkg[1];
+      pkg = pkg[0];
+      params = path.substr(mod.length + 1);
+    } else {
+      pkg = '';
+      mod = path;
+      params = '';
+    }
+    return {path, pkg, mod, params};
+  }
 }

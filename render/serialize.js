@@ -1,5 +1,5 @@
 var modtask = function() {}
-modtask.verbose = true;
+modtask.verbose = false;
 
 modtask.seqs = {};
 modtask.seqs.serializeNavItemsFor = function(viewModule) {
@@ -209,14 +209,14 @@ modtask.seqs.genFinalHtml = function(push, params) {
 	`;
 
   content += '<body><div id="__izyware_circus_initial_wrapper">' + modtask.bodyStr + '</div>';
-  var addAutoStart = false;
+  var addAutoStart = true;
   if (addAutoStart) {
     content += "<script>var element = document.getElementById('__izyware_circus_initial_wrapper');element.parentNode.removeChild(element);</script>";
     content += "<script>document['__izyware_appid'] = '"
       + params.pkgName + "'; document['__izyware_phantom_uri'] = '"
       + params.uri
       + "'; if ((window.location.href + '').indexOf('#') == -1) window.location.href = (window.location.href + '').split('#')[0] + '#" + params.uri
-      + "';</script>" + tag;
+      + "';</script>";
     content += '<script src="' + params.bootstrapUrl + '"></script>';
   }
   content += '</body></html>';
