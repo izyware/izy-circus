@@ -16,6 +16,8 @@ module.exports = {
       render,
       canHandle: function(req, sessionObjs) {
         if (!config.acceptedPaths) config.acceptedPaths = [];
+        // metagatewayUrl is always present 
+        config.acceptedPaths.push(config.metagatewayUrl);
 
         sessionObjs = sessionObjs || {};
         sessionObjs.parsed = modtask.parseClientRequest(req, config);

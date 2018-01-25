@@ -167,7 +167,7 @@ modtask.serializeContentPulses = function(data) {
   modtask.pulses.forEach(pulse => {
     strs += '\r\n<li>';
     strs += '\r\n<h1>' + pulse.title + '</h1>' +
-      '<img src="' + pulse.ico1 + '"></img>' +
+      '<img src="' + modtask.getMetaGatewayAddress(pulse, modtask.params) + '"></img>' +
       '<h2>' + pulse.description + '</h2>' +
       (pulse.markdown1? '<div>' +  pulse.markdown1 + '</div>' : '');
       if (data.pulseLinks && data.pulseLinks[i] && data.mod.params) {
@@ -222,6 +222,7 @@ modtask.seqs.genFinalHtml = function(push, params) {
   if (!params.config || !params.config.bootstrapUrl) {
     addAutoStart = false;
   }
+  if (modtask.verbose) modtask.Log('addAutoStart: ' + addAutoStart);
   if (addAutoStart) {
     content += "<script>var element = document.getElementById('__izyware_circus_initial_wrapper');element.parentNode.removeChild(element);</script>";
     content += "<script>document['__izyware_appid'] = '"
@@ -231,7 +232,7 @@ modtask.seqs.genFinalHtml = function(push, params) {
       + "';</script>";
     content += '<script src="' + params.config.bootstrapUrl + '"></script>';
   } else {
-    content += '<h1>WARNING: config.bootstrapUrl was not specified. autostart will be disabled</h1>';
+    content += '<!-- WARNING: config.bootstrapUrl was not specified. autostart will be disabled !--->';
   }
 
   content += '</body></html>';
@@ -255,6 +256,7 @@ modtask.serializeToHtml = function(push, allViewModules, params) {
   modtask.currentViewModuleIndex = 0;
   modtask.stopSerializingBody = false;
   modtask.stopSerializingMeta = false;
+  modtask.params = params;
 
   push([
     ['nop'],
@@ -265,16 +267,52 @@ modtask.serializeToHtml = function(push, allViewModules, params) {
   ]);
 }
 
+modtask.metaGateway = function(push, params) {
+  var prefix = modtask.getMetaUriPrefix(params);
+  var id = params.uri.substr(prefix.length);
+  if (id.indexOf('-') >= 0) {
+    id = id.split('-');
+    id = id[id.length-1] + '';
+    id = id.replace(/"/g); // injection protection
+    if (id.length > params.config.shardID.length) {
+      id = id.substr(params.config.shardID.length);
+    } else {
+      id = null;
+    }
+  } else {
+    id = null;
+  }
 
+  if (!id) {
+    return push(['server_response', { status: 404 }]);
+  }
+
+  modtask.pulses = [];
+  push([
+    ['import_pulses', {
+      fields: ['icon1'],
+      conditions: ' id = "' + id + '" ',
+      limit: ' limit 0, 1 '
+    }, modtask],
+    function(push) {
+      if (modtask.pulses.length == 0) return push(['server_response', { status: 404 }]);
+      var pulse = modtask.pulses[0];
+      modtask.ldmod('rel:stream').decodeBase64Content(pulse.icon1, params.serverObjs);
+    }
+  ]);
+}
+
+modtask.getMetaUriPrefix = function(params) {
+  return params.config.metagatewayUrl + '/';
+}
+
+modtask.getMetaGatewayAddress = function(obj, params) {
+  return 'https://' + params.domain + modtask.getMetaUriPrefix(params) + obj.address + '-' + params.config.shardID + obj.id;
+}
 
 modtask.setMetaData = function(obj) {
-  var pkgpath = '';
-  var apigateway = {
-    url: 'https://izyware.com/apigateway',
-    prefix: '%3A',
-  };
-  var mypkg = 'izyware/viewer/blog';
-  var imgurl = apigateway.url + '/' + apigateway.prefix + mypkg + '%3A' + 'browse/crawlmetadata' + '%3A' + obj.address;
+  var imgurl = modtask.getMetaGatewayAddress(obj, modtask.params);
+  if (modtask.verbose) modtask.Log('setMetaData: ' + imgurl);
 
   var items = [{
     tag: 'title',

@@ -17,6 +17,7 @@ modtask.render = function(renderUtils, params, cb) {
   }
 
   var uri = params.uri;
+
   /*
    https://izyware.com => '/'
    https://izyware.com/ => '/'
@@ -30,20 +31,27 @@ modtask.render = function(renderUtils, params, cb) {
   modtask.serverObjs = params.serverObjs;
   var serverObjs = params.serverObjs;
 
-  // This will offer import_pulse
   modtask.mainappPathName = 'izyware:viewer/top';
   // Start with this
-  modtask.currentViewModule = modtask.mainappPathName;
+  modtask.currentViewModule = '';
   modtask.allViewModules = [];
   modtask.setupChaining();
   modtask.doChain([
+    //  Need this as it this will offer import_pulses
+    ['import_module', modtask.mainappPathName],
+    function(push) {
+      if (uri.indexOf(params.config.metagatewayUrl) == 0) {
+        return modtask.ldmod('rel:serialize').sp('modcontroller', modtask).sp('verbose', modtask.verbose).metaGateway(push, params);
+      }
+      return push(['nop']);
+    },
     ['import_module', 'ui/w/shell/navmulti:multi'],
     /* setup frame processor */
     function(push) {
       try {
         modtask.frameProcessor = modtask.ldmod('rel:frames');
         modtask.frameProcessor.start(modtask['ui/w/shell/navmulti:multi'], 'http://izycircus/#' + params.uri);
-        modtask.currentViewModule =
+        modtask.currentViewModule = modtask.mainappPathName;
         push(['nop']);
       } catch(e) {
         return modtask.handleTransitionFailure(e);
@@ -54,27 +62,19 @@ modtask.render = function(renderUtils, params, cb) {
       modtask.ldmod('rel:serialize').sp('modcontroller', modtask).sp('verbose', modtask.verbose).serializeToHtml(push, modtask.allViewModules, params);
     },
     function(push) {
-      var pageHtml = params.pageHtml;
       var outcome = {
-        status: 200
+        status: 200,
+        httpHeaders: { 'Content-Type': 'text/html' },
+        payload: params.pageHtml
       };
-      var defaultHttpHeaders = { 'Content-Type': 'text/html' };
-      outcome.httpHeaders = outcome.httpHeaders || {};
-      var p;
-      for(p in outcome.httpHeaders) {
-        defaultHttpHeaders[p] = outcome.httpHeaders[p];
-      }
       var endTime = modtask.getNow();
       var headerPrefix = 'X-IZYCIRCUS-RENDER-';
-      defaultHttpHeaders[headerPrefix + 'TIME-MS'] = endTime - startTime;
-   //   defaultHttpHeaders[headerPrefix + 'CACHE-MISSES'] = cacheMisses.join(',');
-      serverObjs.res.writeHead(outcome.status, defaultHttpHeaders);
-      serverObjs.res.write(pageHtml);
-      serverObjs.res.end();
+      outcome.httpHeaders[headerPrefix + 'TIME-MS'] = endTime - startTime;
+   //   outcome.httpHeaders[headerPrefix + 'CACHE-MISSES'] = cacheMisses.join(',');
       if (cb) {
      //   cb({ success: true });
       }
-      push(['nop']);
+      push(['server_response', outcome]);
     }
   ]);
 }
@@ -127,6 +127,17 @@ modtask.seqs.processNextViewModule = function(push) {
       }
       viewModule.mod = modtask[modname];
       push(['nop']);
+    },
+    function(push) {
+      var mod = viewModule.mod;
+      if (mod.calcValidateState) {
+        mod.calcValidateState(function(outcome) {
+          if (outcome.status == 200) return push(['nop']);
+          return push(['server_response', outcome]);
+        });
+      } else {
+        push(['nop']);
+      }
     },
     function(push) {
       var mod = viewModule.mod;
@@ -203,6 +214,14 @@ modtask.doTransition = function (transition, callback) {
   }
 
   switch (transition.method) {
+    case 'server_response':
+      // No callback - this will terminate the thread
+      var outcome = transition.udt[1];
+      var serverObjs = modtask.serverObjs;
+      serverObjs.res.writeHead(outcome.status, outcome.httpHeaders);
+      if (outcome.payload) serverObjs.res.write(outcome.payload);
+      serverObjs.res.end();
+      return true;
     case 'nop':
       callback(transition);
       return true;

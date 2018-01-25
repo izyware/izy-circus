@@ -14,7 +14,7 @@ Please specifiy arguments.
 
 Rendering
 -----------
-node cli.js method render bootstrapUrl https://izyware.com/chrome_extension.js entrypoint izyware:viewer/top uri /company domain izyware.com  renderingVersion 2 cache.folder /tmp/izy-circus/
+node cli.js method render metagatewayUrl /metagateway shardID 00000000 entrypoint izyware:viewer/top domain izyware.com verbose true uri /company 
 
 
 Test
@@ -34,6 +34,9 @@ function showError(outcome) {
 
 modtask.simulateServerEnvironment = function(config) {
   config.serverObjs = {};
+  config.serverObjs.getCORSHeaders = function() {
+    return {};
+  }
   config.serverObjs.sendStatus = function(p1, p2) {
     console.log('---- Server sendStatus ----', p1, p2);
   }
