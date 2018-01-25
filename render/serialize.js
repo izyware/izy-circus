@@ -94,8 +94,11 @@ modtask.seqs.serializeBodyFor = function(viewModule) {
             viewLinks: modtask.viewLinks
           });
         }
+
         if (modtask.pulses.length == 0) {
-          if (modtask.verbose) modtask.Log('no pulses found for return 404: ' + viewModule.mod.__myname);
+          var msg = 'no pulses found. Make sure calcPulse is defined in ' + viewModule.mod.__myname + ' and returns a non-empty result set';
+          if (modtask.verbose) modtask.Log(msg);
+          modtask.logToHtml(msg);
           modtask.outcome.status = 404;
           modtask.outcome.reason = 'No pulses found';
         }
@@ -106,6 +109,12 @@ modtask.seqs.serializeBodyFor = function(viewModule) {
       push(['nop']);
     }
   ];
+}
+
+modtask.logToHtml = function(str) {
+  modtask.bodyStr += '\r\n<!---------------------------------------\r\n';
+  modtask.bodyStr += str;
+  modtask.bodyStr += '\r\n----------------------------------------!>\r\n';
 }
 
 modtask.seqs.serializeViews = function(push) {
@@ -210,6 +219,9 @@ modtask.seqs.genFinalHtml = function(push, params) {
 
   content += '<body><div id="__izyware_circus_initial_wrapper">' + modtask.bodyStr + '</div>';
   var addAutoStart = true;
+  if (!params.config || !params.config.bootstrapUrl) {
+    addAutoStart = false;
+  }
   if (addAutoStart) {
     content += "<script>var element = document.getElementById('__izyware_circus_initial_wrapper');element.parentNode.removeChild(element);</script>";
     content += "<script>document['__izyware_appid'] = '"
@@ -217,8 +229,11 @@ modtask.seqs.genFinalHtml = function(push, params) {
       + params.uri
       + "'; if ((window.location.href + '').indexOf('#') == -1) window.location.href = (window.location.href + '').split('#')[0] + '#" + params.uri
       + "';</script>";
-    content += '<script src="' + params.bootstrapUrl + '"></script>';
+    content += '<script src="' + params.config.bootstrapUrl + '"></script>';
+  } else {
+    content += '<h1>WARNING: config.bootstrapUrl was not specified. autostart will be disabled</h1>';
   }
+
   content += '</body></html>';
   params.pageHtml = content;
   push(['nop']);

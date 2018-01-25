@@ -12,6 +12,9 @@ modtask.getNow = function() {
 modtask.render = function(renderUtils, params, cb) {
   // Shared per session
   modtask.rootmod = require('izymodtask').getRootModule();
+  if (params.config.verbose) {
+    modtask.verbose = true;
+  }
 
   var uri = params.uri;
   /*
@@ -48,7 +51,7 @@ modtask.render = function(renderUtils, params, cb) {
     },
     modtask.seqs.processNextViewModule,
     function(push) {
-      modtask.ldmod('rel:serialize').sp('modcontroller', modtask).serializeToHtml(push, modtask.allViewModules, params);
+      modtask.ldmod('rel:serialize').sp('modcontroller', modtask).sp('verbose', modtask.verbose).serializeToHtml(push, modtask.allViewModules, params);
     },
     function(push) {
       var pageHtml = params.pageHtml;
@@ -205,6 +208,7 @@ modtask.doTransition = function (transition, callback) {
       return true;
     case 'import_pulses':
       var query = transition.udt[1];
+      if (modtask.verbose) modtask.Log('Import Pulse: ' + JSON.stringify(query));
       try {
         var mod = modtask[modtask.mainappPathName];
         var key = query.name || 'pulses';
