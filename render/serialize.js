@@ -226,7 +226,7 @@ modtask.seqs.genFinalHtml = function(push, params) {
   if (addAutoStart) {
     content += "<script>var element = document.getElementById('__izyware_circus_initial_wrapper');element.parentNode.removeChild(element);</script>";
     content += "<script>document['__izyware_appid'] = '"
-      + params.pkgName + "'; document['__izyware_phantom_uri'] = '"
+      + params.entrypoint.split(':')[0] + "'; document['__izyware_phantom_uri'] = '"
       + params.uri
       + "'; if ((window.location.href + '').indexOf('#') == -1) window.location.href = (window.location.href + '').split('#')[0] + '#" + params.uri
       + "';</script>";
@@ -245,7 +245,7 @@ modtask.serializeToHtml = function(push, allViewModules, params) {
   modtask.allViewModules = allViewModules;
   params = params || {
       bootstrapUrl: '',
-      pkgName: '',
+      entrypoint: 'appid:viewer/top',
       uri: ''
     };
 
