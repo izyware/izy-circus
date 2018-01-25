@@ -2,7 +2,7 @@
 var modtask = function(params, cb) {
   var params = Object.assign({}, params);
   if (params.testMode) {
-    serverObjs.sendStatus({
+    params.serverObjs.sendStatus({
       status: 200,
       plugin: 'circus'
     }, 'OK');
