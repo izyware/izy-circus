@@ -15,30 +15,20 @@ modtask.render = function(renderUtils, params, cb) {
   if (params.config.verbose) {
     modtask.verbose = true;
   }
-
   var uri = params.uri;
-
-  /*
-   https://izyware.com => '/'
-   https://izyware.com/ => '/'
-   https://izyware.com/product => '/product'
-   https://izyware.com/product/ => '/product/undefined?'
-  */
-
   var startTime = modtask.getNow();
-  var cacheMisses = [];
 
   modtask.serverObjs = params.serverObjs;
   var serverObjs = params.serverObjs;
 
-  modtask.mainappPathName = 'izyware:viewer/top';
+  modtask.entrypoint = params.entrypoint;
   // Start with this
   modtask.currentViewModule = '';
   modtask.allViewModules = [];
   modtask.setupChaining();
   modtask.doChain([
     //  Need this as it this will offer import_pulses
-    ['import_module', modtask.mainappPathName],
+    ['import_module', modtask.entrypoint],
     function(push) {
       if (uri.indexOf(params.config.metagatewayUrl) == 0) {
         return modtask.ldmod('rel:serialize').sp('modcontroller', modtask).sp('verbose', modtask.verbose).metaGateway(push, params);
@@ -51,7 +41,7 @@ modtask.render = function(renderUtils, params, cb) {
       try {
         modtask.frameProcessor = modtask.ldmod('rel:frames');
         modtask.frameProcessor.start(modtask['ui/w/shell/navmulti:multi'], 'http://izycircus/#' + params.uri);
-        modtask.currentViewModule = modtask.mainappPathName;
+        modtask.currentViewModule = modtask.entrypoint;
         push(['nop']);
       } catch(e) {
         return modtask.handleTransitionFailure(e);
@@ -70,7 +60,6 @@ modtask.render = function(renderUtils, params, cb) {
       var endTime = modtask.getNow();
       var headerPrefix = 'X-IZYCIRCUS-RENDER-';
       outcome.httpHeaders[headerPrefix + 'TIME-MS'] = endTime - startTime;
-   //   outcome.httpHeaders[headerPrefix + 'CACHE-MISSES'] = cacheMisses.join(',');
       if (cb) {
      //   cb({ success: true });
       }
@@ -78,8 +67,6 @@ modtask.render = function(renderUtils, params, cb) {
     }
   ]);
 }
-
-
 
 modtask.test_calcPulses = function(cb) {
   var tags = {
@@ -229,7 +216,7 @@ modtask.doTransition = function (transition, callback) {
       var query = transition.udt[1];
       if (modtask.verbose) modtask.Log('Import Pulse: ' + JSON.stringify(query));
       try {
-        var mod = modtask[modtask.mainappPathName];
+        var mod = modtask[modtask.entrypoint];
         var key = query.name || 'pulses';
         mod.sp('useNullAC', true);
         mod.importPulses(query, function(outcome) {
