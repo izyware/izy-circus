@@ -10,7 +10,6 @@ modtask.getNow = function() {
 
 
 modtask.render = function(renderUtils, params, cb) {
-  // Shared per session
   modtask.rootmod = require('izymodtask').getRootModule();
   if (params.config.verbose) {
     modtask.verbose = true;
@@ -21,14 +20,12 @@ modtask.render = function(renderUtils, params, cb) {
   modtask.serverObjs = params.serverObjs;
   var serverObjs = params.serverObjs;
 
-  modtask.entrypoint = params.entrypoint;
-  // Start with this
   modtask.currentViewModule = '';
   modtask.allViewModules = [];
   modtask.setupChaining();
   modtask.doChain([
-    //  Need this as it this will offer import_pulses
-    ['import_module', modtask.entrypoint],
+    ['nop'],
+    modtask.seqs.loadEntryPoint(params),
     function(push) {
       if (uri.indexOf(params.config.metagatewayUrl) == 0) {
         return modtask.ldmod('rel:serialize').sp('modcontroller', modtask).sp('verbose', modtask.verbose).metaGateway(push, params);
@@ -95,6 +92,25 @@ modtask.test_calcPulses = function(cb) {
 
 modtask.currentViewModuleParams = {};
 modtask.seqs = {};
+modtask.seqs.loadEntryPoint = function(params) {
+  modtask.entrypoint = params.entrypoint;
+  return function(push) {
+    push([
+      //  Need this as it this will offer import_pulses
+      ['import_module', modtask.entrypoint, modtask, true],
+      function (push) {
+        // We asked not to fail so that we can manually handle this
+        if (modtask[modtask.entrypoint]) return push(['nop']);
+        if (params.config.missingEntryPointAlias) {
+          params.entrypoint = params.config.missingEntryPointAlias;
+          modtask.entrypoint = params.entrypoint;
+          return push(['import_module', params.config.missingEntryPointAlias]);
+        }
+        return push(['server_response', {payload: 'module ' + modtask.entrypoint + ' not found', status: 404}])
+      }
+    ]);
+  }
+}
 modtask.seqs.processNextViewModule = function(push) {
   var modname = modtask.currentViewModule;
   if (modtask.verbose) modtask.Log('processNextViewModule ' + modname);
@@ -229,9 +245,11 @@ modtask.doTransition = function (transition, callback) {
       return true;
     case 'import_module':
       var pathName = transition.udt[1];
+      var failWhenldPathError = !transition.udt[3];
+      if (modtask.verbose) modtask.Log('failWhenldPathError, import_module: ' + failWhenldPathError + ' ' + pathName);
       try {
         modtask.ldPath(pathName, function (outcome) {
-          if (!outcome.success) return modtask.handleTransitionFailure('Cannot import_module ' + pathName + ': ' + outcome.reason);
+          if (!outcome.success && failWhenldPathError) return modtask.handleTransitionFailure('Cannot import_module ' + pathName + ': ' + outcome.reason);
           return resolveTransition(pathName, outcome.data);
         });
       } catch(e) {
