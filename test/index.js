@@ -7,7 +7,6 @@ var modtask = function(config) {
 		return modtask.showErrorAndExit(outcome);
 	}
 	modtask.doChain = outcome.doChain;
-	modtask.assert = modtask.ldmod('rel:lib/assert');
 	modtask.doChain([
 		['test', 'cases/alttext', 'show alt text for images'],
 		['test', 'cases/htags', 'should put the title and description as h1, h2 and the rest as div'],

@@ -43,13 +43,13 @@ modtask.simulateRender = function(cbServerOutcome) {
 			verbose: false,
 			testUrl: '/izycircustest',
 			metagatewayUrl: '/metagateway',
-			shardID: '1F4421AB',
-			bootstrapUrl: 'https://izyware.com/chrome_extension.js',
+			shardID: 'shard-id',
+			bootstrapUrl: 'https://izyware.com/bootstrapUrl.js',
 			aliases: ['.izywaretest.com'],
 			acceptedPaths: ['/blog', '/'],
 			reloadPerRequest: true,
 			name: 'circus',
-			missingEntryPointAlias: 'apps/web/missingentrypointalias:viewer/top'
+			missingEntryPointAlias: 'apps/web/the_name:viewer/top'
 		},
 		entrypoint: 'sampletestapp1:viewer/top',
 		uri: '/',
