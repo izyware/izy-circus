@@ -41,5 +41,46 @@ you can simply configure the package to auto reload and do
 cp -r * ../izy-proxy/node_modules/izy-circus
 ```
 
+## Testing
+
+```
+node cli.js method test
+```
+
+### Assertion Library
+You can use the *test/lib/assert* library for adding assertions to your tests.
+
+### Writing Tests
+Writing tests has been simplifying by using the `Izy Chains` technology:
+
+```
+modtask.doChain([
+	['test', 'cases/alttext', 'show alt text for images'],
+	['test', 'cases/htags', 'should put the title and description as h1, h2 and the rest as div'],
+	['test', 'cases/headers', 'should insert the correct device and meta headers'],
+	function(_do) {
+		modtask.Log('************** All tests passed! ***************');
+		_do(['nop']);
+	}
+])
+```
+
+Each test case gets implement inside `test/cases/...` and should implement runTest. The framework will contextualize the chain for the test module.
+
+
+For example, `alttext.js`
+
+```
+var modtask = {};
+modtask.runTest = function(doChain) {
+	doChain([
+	  ['simulateRender'],
+	  ['assert/serverResponse', { status: 200 }],
+	  ['assert/serverResponse', { body: 'img alt="1_title_content"' }]
+	]);
+}
+```
+
+
 ## NOTE
 for more details, visit https://izyware.com

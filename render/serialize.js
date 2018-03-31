@@ -163,13 +163,24 @@ modtask.serializeContentPulses = function(data) {
     strs += '</ul>';
   }
 
-  strs += '\r\n<ul>'
+  strs += '\r\n<ul>';
   modtask.pulses.forEach(pulse => {
-    strs += '\r\n<li>';
-    strs += '\r\n<h1>' + pulse.title + '</h1>' +
-      '<img src="' + modtask.getMetaGatewayAddress(pulse, modtask.params) + '"></img>' +
-      '<h2>' + pulse.description + '</h2>' +
-      (pulse.markdown1? '<div>' +  pulse.markdown1 + '</div>' : '');
+    strs += '\r\n<li>\r\n';
+    if (i == 0) {
+      strs += '<h1>' + pulse.title + '</h1>';
+    } else {
+      strs += '<div>' + pulse.title + '</div>';
+    }
+    strs += modtask.generateImageForPulse(pulse, modtask.params);
+
+    if (i == 0) {
+      strs += '<h2>' + pulse.description + '</h2>';
+    } else {
+      strs += '<div>' + pulse.description + '</div>';
+    }
+
+    strs += (pulse.markdown1? '<div>' +  pulse.markdown1 + '</div>' : '');
+
       if (data.pulseLinks && data.pulseLinks[i] && data.mod.params) {
         strs += modtask.serializeLink(data.pulseLinks[i], data.mod);
       }
@@ -178,6 +189,13 @@ modtask.serializeContentPulses = function(data) {
   });
   strs += '\r\n</ul>';
   return strs;
+}
+
+modtask.htmlComments = {};
+modtask.htmlComments.imgGen = 'url uses pulse.address and pulse.id. Seeing undefined might mean either is missing';
+modtask.generateImageForPulse = function(pulse, params) {
+  var alt = pulse.title || '';
+  return '<!--' + modtask.htmlComments.imgGen + '--><img alt="' + alt + '" src="' + modtask.getMetaGatewayAddress(pulse, params) + '"></img>';
 }
 
 modtask.serializeMetaPulses = function(metaPulses) {
@@ -195,10 +213,10 @@ modtask.serializeMetaPulses = function(metaPulses) {
       str += '<title>' + md.val + '</title>';
       return;
     }
-    str += '<meta ';
+    str += '<meta';
     var p;
     for(p in md) {
-      str += (p + '="' + md[p] + '"' );
+      str += ' ' + (p + '="' + md[p] + '"' );
     }
     str += '>';
   });
@@ -352,5 +370,22 @@ modtask.setMetaData = function(obj) {
     name: 'twitter:card',
     content: 'summary_large_image'
   }];
-  return items;
+
+  var commonMetaItems = [{
+    name: 'generator',
+    content: 'izy-circus'
+  }, {
+    charset: 'utf-8'
+  }, {
+    name: 'viewport',
+    content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0'
+  }, {
+    'http-equiv': 'Content-Type',
+    content: 'text/html; charset=utf-8'
+  }, {
+    name: 'referrer',
+    content: 'origin'
+  }];
+
+  return commonMetaItems.concat(items);
 }

@@ -19,7 +19,9 @@ var modtask =
 			currentdir + '../',
 			'rel:/',
 			'rel:/../thirdparty/',
-			'rel:/../../'
+			'rel:/../../',
+
+			currentdir + '../plat/modtask/'
 		];			
 	} 
 }
