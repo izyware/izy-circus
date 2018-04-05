@@ -82,5 +82,15 @@ modtask.runTest = function(doChain) {
 ```
 
 
+## HTML Warning Comments
+In addition to providing performance and diagnostics via HTTP headers, WARNINGS are also logged as html comments. For example:
+
+```
+<!------------ IzyCircus WARNING[setMetaData]: !pulse.address || !pulse.id is missing. link will be affected !------------>
+```
+
+Izy Cloud Watch will scan your pages for warnings like this and alert if there are any content generation issues.
+
+
 ## NOTE
 for more details, visit https://izyware.com
