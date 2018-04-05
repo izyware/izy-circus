@@ -10,9 +10,8 @@ modtask.runTest = function(doChain) {
 		['assert/serverResponse', { body: '<meta name="referrer" content="origin">' }],
 		['assert/serverResponse', { body: '<title>1_title_meta</title>' }],
 		['assert/serverResponse', { body: '<meta name="description" content="1_description_meta">' }],
-		['assert/serverResponse', { body: '<meta property="og:image" content="https://sampletestapp1.izywaretest.com/metagateway/address-shard-id1">' }],
+		['assert/serverResponse', { body: '<meta property="og:image" content="https://test.sampleapps.allpulseitems.izywaretest.com/metagateway/address-shard-id1">' }],
 		function(_push) {
-		 	// console.log(modtask.serverResponse.body);
 			_push(['nop']);
 		}
 	]);

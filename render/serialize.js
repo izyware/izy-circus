@@ -163,6 +163,10 @@ modtask.serializeContentPulses = function(data) {
     strs += '</ul>';
   }
 
+  var gens = {
+    img: modtask.ldmod('rel:handlers/img').sp('serializeMod', modtask),
+    md: modtask.ldmod('rel:handlers/md').sp('serializeMod', modtask),
+  };
   strs += '\r\n<ul>';
   modtask.pulses.forEach(pulse => {
     strs += '\r\n<li>\r\n';
@@ -171,7 +175,7 @@ modtask.serializeContentPulses = function(data) {
     } else {
       strs += '<div>' + pulse.title + '</div>';
     }
-    strs += modtask.generateImageForPulse(pulse, modtask.params);
+    strs += gens.img.serialize(pulse, modtask.params);
 
     if (i == 0) {
       strs += '<h2>' + pulse.description + '</h2>';
@@ -179,7 +183,7 @@ modtask.serializeContentPulses = function(data) {
       strs += '<div>' + pulse.description + '</div>';
     }
 
-    strs += (pulse.markdown1? '<div>' +  pulse.markdown1 + '</div>' : '');
+    strs += gens.md.serialize(pulse, modtask.params);
 
       if (data.pulseLinks && data.pulseLinks[i] && data.mod.params) {
         strs += modtask.serializeLink(data.pulseLinks[i], data.mod);
@@ -191,11 +195,13 @@ modtask.serializeContentPulses = function(data) {
   return strs;
 }
 
-modtask.htmlComments = {};
-modtask.htmlComments.imgGen = 'url uses pulse.address and pulse.id. Seeing undefined might mean either is missing';
-modtask.generateImageForPulse = function(pulse, params) {
-  var alt = pulse.title || '';
-  return '<!--' + modtask.htmlComments.imgGen + '--><img alt="' + alt + '" src="' + modtask.getMetaGatewayAddress(pulse, params) + '"></img>';
+modtask.serializeWarning = function(outcome, context) {
+  var str = '';
+  if (!context) context = '';
+  if (!outcome.success) {
+    str += '\n\n<!------------ IzyCircus WARNING[' + context + ']: ' + outcome.reason + ' !------------>\n\n';
+  }
+  return str;
 }
 
 modtask.serializeMetaPulses = function(metaPulses) {
@@ -205,8 +211,10 @@ modtask.serializeMetaPulses = function(metaPulses) {
 
   var meta = {};
   meta = metaPulses[0];
-  var mds = modtask.setMetaData(meta);
+  var outcome = {};
+  var mds = modtask.setMetaData(meta, outcome);
   var str = '';
+  str += modtask.serializeWarning(outcome, 'setMetaData');
   mds.forEach(md => {
     str += '\r\n';
     if (md.tag == 'title') {
@@ -250,7 +258,7 @@ modtask.seqs.genFinalHtml = function(push, params) {
       + "';</script>";
     content += '<script src="' + params.config.bootstrapUrl + '"></script>';
   } else {
-    content += '<!-- WARNING: config.bootstrapUrl was not specified. autostart will be disabled !--->';
+    content += modtask.serializeWarning({ reason: 'config.bootstrapUrl was not specified. autostart will be disabled' }, 'bootstrapUrl');
   }
 
   content += '</body></html>';
@@ -324,13 +332,22 @@ modtask.getMetaUriPrefix = function(params) {
   return params.config.metagatewayUrl + '/';
 }
 
-modtask.getMetaGatewayAddress = function(obj, params) {
-  return 'https://' + params.domain + modtask.getMetaUriPrefix(params) + obj.address + '-' + params.config.shardID + obj.id;
+modtask.getMetaGatewayAddress = function(pulse, params, outcome) {
+  if (!outcome) outcome = { };
+  outcome.success = true;
+  outcome.data = 'https://' + params.domain + modtask.getMetaUriPrefix(params) + pulse.address + '-' + params.config.shardID + pulse.id;
+  if (!pulse.address || !pulse.id) {
+    outcome.success = false;
+    outcome.reason = '!pulse.address || !pulse.id is missing. link will be affected';
+  }
+  return outcome.data;
 }
 
-modtask.setMetaData = function(obj) {
-  var imgurl = modtask.getMetaGatewayAddress(obj, modtask.params);
-  if (modtask.verbose) modtask.Log('setMetaData: ' + imgurl);
+modtask.setMetaData = function(obj, imgOutcome) {
+  if (!imgOutcome) imgOutcome = { };
+  modtask.getMetaGatewayAddress(obj, modtask.params, imgOutcome);
+  var imgurl = imgOutcome.data;
+  if (modtask.verbose) modtask.Log('setMetaData: ' + JSON.stringify(imgOutcome));
 
   var items = [{
     tag: 'title',

@@ -1,26 +1,33 @@
 
 var modtask = function(params, cb) {
   var params = Object.assign({}, params);
-  if (params.testMode) {
-    params.serverObjs.sendStatus({
-      status: 200,
-      plugin: 'circus'
-    }, 'OK');
-    if (cb) {
-      cb({ success: true });
-    }
+  var domain = params.domain;
+  var appname = params.appname;
+  var serverObjs = params.serverObjs;
+  var uri  = params.uri;
+  if (appname.toLowerCase() == 'www') {
+    var token = 'www.';
+    var newLoc = 'https://' + domain.substr(token.length) + uri;
+    modtask.Log('www redirect (301) to ' + newLoc);
+    serverObjs.res.writeHead(301, { 'Location': newLoc });
+    serverObjs.res.end();
     return ;
   }
 
-  if (!params.renderingVersion) {
-    params.renderingVersion = 3;
+  if (uri.indexOf('.') >= 0 && uri != '/sitemap.xml') {
+    serverObjs.res.writeHead(404);
+    serverObjs.res.write('the requested path was not found: ' + uri);
+    serverObjs.res.end();
+    return ;
   }
 
-  if (params.renderingVersion == 2) {
-    return modtask.ldmod('rel:v2').render(modtask, params, cb);
-  } else if (params.renderingVersion == 3) {
-    return modtask.ldmod('rel:v3').render(modtask, params, cb);
+  if (params.config.testUrl == uri) {
+    return params.serverObjs.sendStatus({
+      status: 200,
+      plugin: 'circus'
+    }, 'OK');
   }
+  return modtask.ldmod('rel:v3').render(modtask, params, cb);
 };
 
 

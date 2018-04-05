@@ -41,37 +41,13 @@ module.exports = {
         var outcome;
         outcome = modtask.determineContext(parsed);
         if (!outcome.success) return modtask.writeOutcome(outcome, res);
-        var appname = outcome.appname;
-
-        if (appname.toLowerCase() == 'www') {
-          var token = 'www.';
-          var newLoc = 'https://' + parsed.domain.substr(token.length) + parsed.path;
-          modtask.Log('www redirect (301) to ' + newLoc);
-          res.writeHead(301, { 'Location': newLoc });
-          res.end();
-          return ;
-        }
-
-        if (parsed.path.indexOf('.') >= 0) {
-          res.writeHead(404);
-          res.write('the requested path was not found: ' + parsed.path);
-          res.end();
-          return ;
-        }
-
-        var renderingVersion = config.renderingVersion || 3; // (parsed.path.indexOf(config.acceptedPaths[0]) == 0 || parsed.path == config.testUrl) ? 2 : 1;
         render({
           config: config,
-          testMode: parsed.path == config.testUrl,
           serverObjs,
-          renderingVersion,
-          entrypoint: `${appname}:viewer/top`,
           uri: parsed.path,
-          domain: parsed.domain
-        }, (outcome) => {
-          if (renderingVersion == 2) return;
-          modtask.writeOutcome(outcome, res);
-        });
+          domain: parsed.domain,
+          appname: outcome.appname
+        }, (outcome) => {});
       }
     }
   }

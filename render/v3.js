@@ -14,6 +14,7 @@ modtask.render = function(renderUtils, params, cb) {
   if (params.config.verbose) {
     modtask.verbose = true;
   }
+  modtask.params = params;
   var uri = params.uri;
   var startTime = modtask.getNow();
 
@@ -36,8 +37,8 @@ modtask.render = function(renderUtils, params, cb) {
     /* setup frame processor */
     function(push) {
       try {
-        modtask.frameProcessor = modtask.ldmod('rel:frames');
-        modtask.frameProcessor.start(modtask['ui/w/shell/navmulti:multi'], 'http://izycircus/#' + params.uri);
+        modtask.uriProcessor = modtask.ldmod('rel:uriprocessor');
+        modtask.uriProcessor.start(modtask['ui/w/shell/navmulti:multi'], 'http://izycircus/#' + params.uri);
         modtask.currentViewModule = modtask.entrypoint;
         push(['nop']);
       } catch(e) {
@@ -93,6 +94,7 @@ modtask.test_calcPulses = function(cb) {
 modtask.currentViewModuleParams = {};
 modtask.seqs = {};
 modtask.seqs.loadEntryPoint = function(params) {
+  params.entrypoint = `${params.appname}:viewer/top`;
   modtask.entrypoint = params.entrypoint;
   return function(push) {
     push([
@@ -106,7 +108,7 @@ modtask.seqs.loadEntryPoint = function(params) {
           modtask.entrypoint = params.entrypoint;
           return push(['import_module', params.config.missingEntryPointAlias]);
         }
-        return push(['server_response', {payload: 'module ' + modtask.entrypoint + ' not found', status: 404}])
+        return push(['server_response', {payload: 'module ' + modtask.entrypoint + ' not found', status: 404}]);
       }
     ]);
   }
@@ -154,11 +156,15 @@ modtask.seqs.processNextViewModule = function(push) {
       }
     },
     function(push) {
+      if (modtask.handleSpecialCases(viewModule, push)) {
+        // break here
+        return;
+      }
       var mod = viewModule.mod;
       if (mod.calcNav) {
         mod.calcNav(function(navItems) {
           viewModule.navItems = navItems;
-          modtask.frameProcessor.addNewNav(navItems, function(navItem, currentViewModuleParams) {
+          modtask.uriProcessor.addNewNav(navItems, function(navItem, currentViewModuleParams) {
             if (navItem && navItem.views && navItem.views.body) {
               modtask.currentViewModule = navItem.views.body;
               modtask.currentViewModuleParams = currentViewModuleParams;
@@ -177,6 +183,14 @@ modtask.seqs.processNextViewModule = function(push) {
     }
   ];
   push(seqs);
+}
+
+modtask.handleSpecialCases = function(viewModule, push) {
+  if (modtask.params.uri == '/sitemap.xml') {
+    modtask.ldmod('rel:handlers/sitemap').sp('modcontroller', modtask).sp('verbose', modtask.verbose).gateway(push, modtask.params, viewModule);
+    return true;
+  }
+  return false;
 }
 
 modtask.setupChaining = function() {
