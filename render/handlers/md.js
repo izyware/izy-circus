@@ -37,8 +37,6 @@ modtask.quickMdRender = function(mdText) {
       regex.multiline = false;
       this.rules.push({regex: regex, replacement: replacement});
     };
-
-    // Render some Markdown into HTML.
     this.render = function (text) {
       text = '\n' + text + '\n';
       this.rules.forEach(function (rule) {
@@ -46,7 +44,6 @@ modtask.quickMdRender = function(mdText) {
       });
       return text.trim();
     };
-
     function para (text, line) {
       var trimmed = line.trim();
       if (/^<\/?(ul|ol|li|h|p|bl)/i.test(trimmed)) {
@@ -54,19 +51,15 @@ modtask.quickMdRender = function(mdText) {
       }
       return '\n<p>' + trimmed + '</p>\n';
     }
-
     function ulList (text, item) {
       return '\n<ul>\n\t<li>' + item.trim() + '</li>\n</ul>';
     }
-
     function olList (text, item) {
       return '\n<ol>\n\t<li>' + item.trim() + '</li>\n</ol>';
     }
-
     function blockquote (text, tmp, item) {
       return '\n<blockquote>' + item.trim() + '</blockquote>';
     }
-
     function header (text, chars, content) {
       var level = chars.length + 2;
       return '<h' + level + '>' + content.trim() + '</h' + level + '>';
