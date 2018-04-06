@@ -66,31 +66,6 @@ modtask.render = function(renderUtils, params, cb) {
   ]);
 }
 
-modtask.test_calcPulses = function(cb) {
-  var tags = {
-    browse_pulse: 7,
-    // help tags
-    thisapp: 2
-  };
-  var offset = 0;
-  var limit = 3;
-  return cb({
-    'meta': {
-      tagsToAnd: [tags.thisapp, tags.browse_pulse],
-      fields: ['title', 'description', 'address'],
-      order: null,
-      limit: null
-    },
-    'content': {
-      tagsToAnd: [tags.thisapp],
-      fields: ['title', 'description', 'icon1', 'postdate', 'address'],
-      order: 'order by postdate desc',
-      limit: 'limit ' + offset + ',' + limit
-    }
-  });
-};
-
-
 modtask.currentViewModuleParams = {};
 modtask.seqs = {};
 modtask.seqs.loadEntryPoint = function(params) {
