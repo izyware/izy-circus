@@ -11,6 +11,7 @@ var modtask = function(config) {
 		['test', 'cases/md', 'renders markdown'],
 		['test', 'cases/sitemap', 'gets sitemap.xml'],
 		['test', 'cases/404s', '404s'],
+		['test', 'cases/emptypulses404', 'emptypulses should status 404'],
 		['test', 'cases/img', 'show alt text and url for images'],
 		['test', 'cases/htags', 'should put the title and description as h1, h2 and the rest as div'],
 		['test', 'cases/headers', 'should insert the correct device and meta headers'],

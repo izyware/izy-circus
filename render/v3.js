@@ -51,9 +51,9 @@ modtask.render = function(renderUtils, params, cb) {
     },
     function(push) {
       var outcome = {
-        status: 200,
+        status: params.serializeOutcome.status,
         httpHeaders: { 'Content-Type': 'text/html' },
-        payload: params.pageHtml
+        payload: params.serializeOutcome.pageHtml
       };
       var endTime = modtask.getNow();
       var headerPrefix = 'X-IZYCIRCUS-RENDER-';

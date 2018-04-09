@@ -99,8 +99,8 @@ modtask.seqs.serializeBodyFor = function(viewModule) {
           var msg = 'no pulses found. Make sure calcPulse is defined in ' + viewModule.mod.__myname + ' and returns a non-empty result set';
           if (modtask.verbose) modtask.Log(msg);
           modtask.logToHtml(msg);
-          modtask.outcome.status = 404;
-          modtask.outcome.reason = 'No pulses found';
+          modtask.params.serializeOutcome.status = 404;
+          modtask.params.serializeOutcome.reason = 'No pulses found';
         }
         push(['nop']);
       },
@@ -262,7 +262,7 @@ modtask.seqs.genFinalHtml = function(push, params) {
   }
 
   content += '</body></html>';
-  params.pageHtml = content;
+  params.serializeOutcome.pageHtml = content;
   push(['nop']);
 }
 
@@ -274,9 +274,6 @@ modtask.serializeToHtml = function(push, allViewModules, params) {
       entrypoint: 'appid:viewer/top',
       uri: ''
     };
-
-  modtask.outcome = {};
-  modtask.outcome.status = 200;
   modtask.bodyStr = '';
   modtask.headerStr = '';
   modtask.currentViewModuleIndex = 0;
@@ -284,6 +281,9 @@ modtask.serializeToHtml = function(push, allViewModules, params) {
   modtask.stopSerializingMeta = false;
   modtask.params = params;
 
+
+  modtask.params.serializeOutcome = {};
+  modtask.params.serializeOutcome.status = 200;
   push([
     ['nop'],
     modtask.seqs.serializeViews,
