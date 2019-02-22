@@ -38,7 +38,7 @@ Or you can use it inside your node app (i.e. izy-proxy uses circus to render ser
 you can simply configure the package to auto reload and do
 
 ```
-cp -r * ../izy-proxy/node_modules/izy-circus
+rsync -av --progress ./* ../izy-proxy/node_modules/izy-circus --exclude node_modules
 ```
 
 ## Testing
@@ -94,3 +94,11 @@ Izy Cloud Watch will scan your pages for warnings like this and alert if there a
 
 ## NOTE
 for more details, visit https://izyware.com
+
+
+# Known Issues
+* retire test/lib/assert and use the izy-proxy assertion librariy instead
+
+# Change Log
+* refactored the loadPackageIfNotPresent inside izy-circus/render/v3.js to use the configurable pkgloader using izy-proxy 2.0;
+

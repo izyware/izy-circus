@@ -12,6 +12,7 @@
   },
   "files": [
     "README",
+    "README.md",
     "cli.js",
     "g_izycircus.js",
     "index.js",

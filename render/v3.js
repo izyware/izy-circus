@@ -10,6 +10,8 @@ modtask.getNow = function() {
 
 
 modtask.render = function(renderUtils, params, cb) {
+  modtask.__chainProcessorConfig = params.config.__chainProcessorConfig || {};
+
   modtask.rootmod = require('izymodtask').getRootModule();
   if (params.config.verbose) {
     modtask.verbose = true;
@@ -101,6 +103,7 @@ modtask.seqs.processNextViewModule = function(push) {
   var seqs = [
     ['import_module', modname],
     function(push) {
+      if (modtask.verbose) modtask.Log(modname + ': successfully loaded ');
       var p;
       for(p in modtask.currentViewModuleParams) {
         modtask[modname][p] = modtask.currentViewModuleParams[p];
@@ -110,17 +113,26 @@ modtask.seqs.processNextViewModule = function(push) {
     },
     function(push) {
       var mod = viewModule.mod;
+      if (modtask.verbose) modtask.Log(modname + ': calcValidateState ');
       if (mod.calcValidateState) {
-        mod.calcValidateState(function(outcome) {
-          if (outcome.status == 200) return push(['nop']);
-          return push(['server_response', outcome]);
-        });
+        try {
+          mod.calcValidateState(function (outcome) {
+            if (outcome.status == 200) return push(['nop']);
+            return push(['server_response', outcome]);
+          });
+        } catch(e) {
+          return push(['server_response', {
+            status: 500,
+            payload: modname + '.calcValidateState failed: ' + e.message
+          }]);
+        }
       } else {
         push(['nop']);
       }
     },
     function(push) {
       var mod = viewModule.mod;
+      if (modtask.verbose) modtask.Log(modname + ': calcPulses');
       if (mod.calcPulses) {
         mod.calcPulses(function (pulses) {
           viewModule.pulses = pulses;
@@ -136,6 +148,7 @@ modtask.seqs.processNextViewModule = function(push) {
         return;
       }
       var mod = viewModule.mod;
+      if (modtask.verbose) modtask.Log(modname + ': calcNav');
       if (mod.calcNav) {
         mod.calcNav(function(navItems) {
           viewModule.navItems = navItems;
@@ -291,8 +304,25 @@ modtask.ldPath = function(path, cb) {
     }
 
     if (pkg === '') return cb(outcome);
-    var pkgloader = rootmod.ldmod('pkgloader');
 
+    var cfg = modtask.__chainProcessorConfig || {};
+    cfg = cfg.import || {};
+
+    if (!cfg.pkgloadermodname) {
+      return cb({ reason:
+        'processors.import cannot find a package loader. you must specify a pkgloader in the configuration' });
+    };
+
+    if (!cfg.pkgloadermodconfig) cfg.pkgloadermodconfig = {};
+    var modpkgloader = rootmod.ldmod(cfg.pkgloadermodname);
+
+    var p;
+    for(var p in cfg.pkgloadermodconfig) {
+      modpkgloader.sp(p, cfg.pkgloadermodconfig[p]);
+    }
+
+    // var pkgloader = rootmod.ldmod('pkgloader');
+    var pkgloader = modpkgloader;
     pkgloader.getCloudMod(pkg).incrementalLoadPkg(
       // One of these per package :)
       function (pkgName, pkg, pkgString) {
